@@ -129,6 +129,67 @@ func findHistory(n *html.Node) *html.Node {
 	return nil
 }
 
+// Extract a regular data row.
+func row(n *Node) (bool, []string) {
+	n.Push()
+	defer n.Pop()
+
+	var values []string
+	for n.Child("td"); n.Ok(); n.Sibling("td") {
+		n.Push()
+		n.Child("label")
+		val := strings.TrimSpace(n.Text())
+		if !n.Ok() {
+			n.Pop()
+			return false, nil
+		}
+
+		n.Pop()
+		values = append(values, val)
+	}
+
+	return true, values
+}
+
+// Extract a standard "more details" row.
+func more(n *Node, l *Ledger) error {
+	n.Push()
+	defer n.Pop()
+
+	n.Child("td")
+	n.Child("div")
+	n.Child("div")
+	n.Child("table")
+	n.Sibling("table")
+	n.Child("tbody")
+	if n.Error() != nil {
+		return n.Error()
+	}
+
+	// First row is headers.
+	n.Child("tr")
+
+	var headers []string
+
+	n.Push()
+	for n.Child("td"); n.Ok(); n.Sibling("td") {
+		n.Push()
+		n.Child("b")
+		headers = append(headers, strings.TrimSpace(n.Text()))
+		n.Pop()
+	}
+	n.Pop()
+
+	i := 0
+	n.Sibling("tr")
+	for n.Child("td"); n.Ok(); n.Sibling("td") {
+		l.Write(headers[i], strings.TrimSpace(n.Text()))
+		i++
+	}
+
+	return nil
+}
+
 func usage() {
 	fmt.Fprintf(os.Stderr, "usage: eac2json eac.html\n")
 	os.Exit(2)
@@ -253,72 +314,9 @@ func main() {
 	}
 
 	w := bufio.NewWriter(os.Stdout)
+	defer w.Flush()
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(l.entries); err != nil {
 		log.Fatal(err)
 	}
-	if err := w.Flush(); err != nil {
-		log.Fatal(err)
-	}
-}
-
-// Extract a regular data row.
-func row(n *Node) (bool, []string) {
-	n.Push()
-	defer n.Pop()
-
-	var values []string
-	for n.Child("td"); n.Ok(); n.Sibling("td") {
-		n.Push()
-		n.Child("label")
-		val := strings.TrimSpace(n.Text())
-		if !n.Ok() {
-			n.Pop()
-			return false, nil
-		}
-
-		n.Pop()
-		values = append(values, val)
-	}
-
-	return true, values
-}
-
-// Extract a standard "more details" row.
-func more(n *Node, l *Ledger) error {
-	n.Push()
-	defer n.Pop()
-
-	n.Child("td")
-	n.Child("div")
-	n.Child("div")
-	n.Child("table")
-	n.Sibling("table")
-	n.Child("tbody")
-	if n.Error() != nil {
-		return n.Error()
-	}
-
-	// First row is headers.
-	n.Child("tr")
-
-	var headers []string
-
-	n.Push()
-	for n.Child("td"); n.Ok(); n.Sibling("td") {
-		n.Push()
-		n.Child("b")
-		headers = append(headers, strings.TrimSpace(n.Text()))
-		n.Pop()
-	}
-	n.Pop()
-
-	i := 0
-	n.Sibling("tr")
-	for n.Child("td"); n.Ok(); n.Sibling("td") {
-		l.Write(headers[i], strings.TrimSpace(n.Text()))
-		i++
-	}
-
-	return nil
 }
