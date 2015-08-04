@@ -1,0 +1,17 @@
+go get -u marius.ae/eac2json
+
+COMMAND DOCUMENTATION
+
+    Eac2json parses Schwab's Employee Awards Center transaction history page
+    from HTML into JSON. The output is a sequence of entries, each of which
+    is a key-value bag. They are in the same order as they appear in the
+    input document. Eac2json coalesces "more details" entries into its
+    parent entry; their key-values appear together as one.
+
+    In order to use eac2json, you must first save the HTML from the Schwab
+    Employee Awards Center history page. Go to the "My Equity Awards" tab,
+    then to the "History & Statements" sub-tab. Set the date range to "All",
+    and save the page to a file. Chrome doesn't seem to do very well; Safari
+    works fine.
+
+
